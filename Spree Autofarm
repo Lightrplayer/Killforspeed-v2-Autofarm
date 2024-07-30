@@ -1,0 +1,66 @@
+-- Lua Script for Roblox: Persistent Teleportation GUI
+
+-- Variables
+local scriptActive = false
+local teleportPosition = Vector3.new(-30, 61, 1)
+local player = game.Players.LocalPlayer
+
+-- Function to create the GUI
+local function createGui()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "TeleportGui"  -- Ensure unique name to avoid duplication
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    -- Create a button to toggle the script
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0, 100, 0, 50)
+    toggleButton.Position = UDim2.new(0, 10, 0, 10)
+    toggleButton.Text = "Toggle Teleport"
+    toggleButton.Parent = screenGui
+
+    -- Connect the button's click event to the toggle function
+    toggleButton.MouseButton1Click:Connect(function()
+        scriptActive = not scriptActive
+        toggleButton.Text = scriptActive and "Teleport: On" or "Teleport: Off"
+    end)
+end
+
+-- Function to teleport the player
+local function teleportPlayer()
+    if not scriptActive then return end
+
+    local targetPart = nil
+
+    -- Search for parts named "speedbox"
+    for _, part in ipairs(workspace:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name == "speedbox" then
+            targetPart = part
+            break
+        end
+    end
+
+    -- Teleport to the "speedbox" or default location
+    local character = player.Character
+    if targetPart then
+        character:SetPrimaryPartCFrame(targetPart.CFrame)
+    else
+        character:SetPrimaryPartCFrame(CFrame.new(teleportPosition))
+    end
+end
+
+-- Create GUI initially
+createGui()
+
+-- Recreate GUI and maintain state on respawn
+player.CharacterAdded:Connect(function()
+    -- Wait for the character to fully load before setting CFrame
+    player.Character:WaitForChild("HumanoidRootPart")
+    createGui()
+end)
+
+-- Run the teleportation function periodically
+game:GetService("RunService").RenderStepped:Connect(function()
+    if scriptActive then
+        teleportPlayer()
+    end
+end)
